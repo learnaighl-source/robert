@@ -197,12 +197,44 @@ export default function Home() {
     }
   };
 
-  const renderSlotContent = (slot) => {
+  const isBusinessHours = (hour) => {
+    return hour >= 9 && hour <= 17; // 9 AM to 5:30 PM (17:30)
+  };
+
+  const formatAvailableTime = (hour, freeMinutes) => {
+    if (freeMinutes === 60) {
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+      const period = hour < 12 ? "AM" : "PM";
+      return `${displayHour}:00 ${period}`;
+    } else if (freeMinutes > 0) {
+      const startMinute = 60 - freeMinutes;
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+      const period = hour < 12 ? "AM" : "PM";
+      return `${displayHour}:${startMinute
+        .toString()
+        .padStart(2, "0")} ${period}`;
+    }
+    return "";
+  };
+
+  const renderSlotContent = (slot, hour) => {
+    if (!isBusinessHours(hour)) {
+      return (
+        <div className="slot-content vertical">
+          <div className="not-available-slot" style={{ height: "100%" }}>
+            <span className="not-available-text">Not Available</span>
+          </div>
+        </div>
+      );
+    }
+
     if (slot.availability.freePercentage === 100) {
       return (
         <div className="slot-content vertical">
           <div className="free-portion-vertical" style={{ height: "100%" }}>
-            <span className="time-text">{slot.freeMinutes}min</span>
+            <span className="time-text">
+              {formatAvailableTime(hour, slot.freeMinutes)}
+            </span>
           </div>
         </div>
       );
@@ -226,7 +258,9 @@ export default function Home() {
             className="free-portion-vertical"
             style={{ height: `${slot.availability.freePercentage}%` }}
           >
-            <span className="time-text">{slot.freeMinutes}min</span>
+            <span className="time-text">
+              {formatAvailableTime(hour, slot.freeMinutes)}
+            </span>
           </div>
         </div>
       );
@@ -487,6 +521,19 @@ export default function Home() {
           color: #666666;
           font-style: italic;
         }
+        .not-available-slot {
+          background: linear-gradient(180deg, #4a4a4a, #2a2a2a) !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          opacity: 0.6 !important;
+        }
+        .not-available-text {
+          font-size: 10px !important;
+          color: #999999 !important;
+          font-weight: 500 !important;
+          text-align: center !important;
+        }
       `}</style>
 
       <div className="container">
@@ -568,7 +615,7 @@ export default function Home() {
                       <div className="time-label">{slot.time.label}</div>
                       {slot.userSlots.map((userSlot) => (
                         <div key={userSlot.userId} className="slot-cell">
-                          {renderSlotContent(userSlot)}
+                          {renderSlotContent(userSlot, slot.time.hour)}
                         </div>
                       ))}
                     </React.Fragment>
