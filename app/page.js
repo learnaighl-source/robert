@@ -197,12 +197,100 @@ export default function Home() {
     }
   };
 
-  const renderSlotContent = (slot) => {
+  const formatAvailableTime = (hour, freeMinutes) => {
+    if (freeMinutes === 60) {
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+      const period = hour < 12 ? "AM" : "PM";
+      return `${displayHour}:00 ${period}`;
+    } else if (freeMinutes > 0) {
+      const startMinute = 60 - freeMinutes;
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+      const period = hour < 12 ? "AM" : "PM";
+      return `${displayHour}:${startMinute
+        .toString()
+        .padStart(2, "0")} ${period}`;
+    }
+    return "";
+  };
+
+  const renderSlotContent = (slot, hour) => {
+    // Check if hour is outside business hours (9 AM to 5:30 PM)
+    if (hour < 9 || hour > 17) {
+      return (
+        <div className="slot-content vertical">
+          <div className="not-available-slot" style={{ height: "100%" }}>
+            <span className="not-available-text">Not Available</span>
+          </div>
+        </div>
+      );
+    }
+
+    // Special case for 5 PM hour (17:00-17:59)
+    // Only 5:00-5:30 PM is available, 5:30-6:00 PM is not available
+    if (hour === 17) {
+      // For 5 PM slot, only first 30 minutes are business hours
+      const availableMinutes = Math.min(slot.freeMinutes, 30);
+
+      if (availableMinutes === 0) {
+        // Completely busy during business hours, rest is not available
+        return (
+          <div className="slot-content vertical">
+            <div className="not-available-slot" style={{ height: "50%" }}>
+              <span className="not-available-text">Not Available</span>
+            </div>
+            <div
+              className="busy-portion-vertical"
+              style={{ height: "50%" }}
+            ></div>
+          </div>
+        );
+      } else if (availableMinutes === 30) {
+        // Fully available during business hours
+        return (
+          <div className="slot-content vertical">
+            <div className="not-available-slot" style={{ height: "50%" }}>
+              <span className="not-available-text">Not Available</span>
+            </div>
+            <div className="free-portion-vertical" style={{ height: "50%" }}>
+              <span className="time-text">{formatAvailableTime(hour, 60)}</span>
+            </div>
+          </div>
+        );
+      } else {
+        // Partially available during business hours
+        const busyPercentage = ((30 - availableMinutes) / 30) * 50;
+        const freePercentage = (availableMinutes / 30) * 50;
+
+        return (
+          <div className="slot-content vertical">
+            <div className="not-available-slot" style={{ height: "50%" }}>
+              <span className="not-available-text">Not Available</span>
+            </div>
+            <div
+              className="busy-portion-vertical"
+              style={{ height: `${busyPercentage}%` }}
+            ></div>
+            <div
+              className="free-portion-vertical"
+              style={{ height: `${freePercentage}%` }}
+            >
+              <span className="time-text">
+                {formatAvailableTime(hour, availableMinutes)}
+              </span>
+            </div>
+          </div>
+        );
+      }
+    }
+
+    // Regular business hours (9 AM - 4:59 PM)
     if (slot.availability.freePercentage === 100) {
       return (
         <div className="slot-content vertical">
           <div className="free-portion-vertical" style={{ height: "100%" }}>
-            <span className="time-text">{slot.freeMinutes}min</span>
+            <span className="time-text">
+              {formatAvailableTime(hour, slot.freeMinutes)}
+            </span>
           </div>
         </div>
       );
@@ -226,7 +314,9 @@ export default function Home() {
             className="free-portion-vertical"
             style={{ height: `${slot.availability.freePercentage}%` }}
           >
-            <span className="time-text">{slot.freeMinutes}min</span>
+            <span className="time-text">
+              {formatAvailableTime(hour, slot.freeMinutes)}
+            </span>
           </div>
         </div>
       );
@@ -487,6 +577,19 @@ export default function Home() {
           color: #666666;
           font-style: italic;
         }
+        .not-available-slot {
+          background: linear-gradient(180deg, #4a4a4a, #2a2a2a) !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          opacity: 0.6 !important;
+        }
+        .not-available-text {
+          font-size: 10px !important;
+          color: #999999 !important;
+          font-weight: 500 !important;
+          text-align: center !important;
+        }
       `}</style>
 
       <div className="container">
@@ -568,7 +671,7 @@ export default function Home() {
                       <div className="time-label">{slot.time.label}</div>
                       {slot.userSlots.map((userSlot) => (
                         <div key={userSlot.userId} className="slot-cell">
-                          {renderSlotContent(userSlot)}
+                          {renderSlotContent(userSlot, slot.time.hour)}
                         </div>
                       ))}
                     </React.Fragment>
