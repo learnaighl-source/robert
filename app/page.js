@@ -7,6 +7,7 @@ export default function Home() {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [timeSlots, setTimeSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [nextUpdateIn, setNextUpdateIn] = useState(300); // 5 minutes in seconds
 
   const times = [
     { label: "12 AM", hour: 0 },
@@ -36,17 +37,31 @@ export default function Home() {
   ];
 
   useEffect(() => {
-    // Initial load of selected users
-    fetchSelectedUsers();
+    // Initial load
+    fetchUsersAndEvents();
     
-    // Poll for updates every 3 seconds
-    const interval = setInterval(fetchSelectedUsers, 3000);
+    // Poll for user changes every 2 seconds (quick check)
+    const userInterval = setInterval(checkUserChanges, 2000);
     
-    return () => clearInterval(interval);
+    // Countdown timer every second
+    const timerInterval = setInterval(() => {
+      setNextUpdateIn(prev => {
+        if (prev <= 1) {
+          // Time's up - fetch fresh data
+          updateEventsOnly();
+          return 300; // Reset to 5 minutes
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    return () => {
+      clearInterval(userInterval);
+      clearInterval(timerInterval);
+    };
   }, []);
 
   useEffect(() => {
-    // Only update time slots when selectedUsers actually changes
     if (selectedUsers.length > 0) {
       updateTimeSlots();
     } else {
@@ -55,29 +70,56 @@ export default function Home() {
     }
   }, [selectedUsers]);
 
-  const fetchSelectedUsers = async () => {
+  const fetchUsersAndEvents = async () => {
     try {
       const response = await fetch('/api/selected-users');
       const data = await response.json();
       
       if (data.selectedUsers) {
-        // Only update if the selection actually changed
+        setSelectedUsers(data.selectedUsers);
+        setNextUpdateIn(300); // Reset timer to 5 minutes
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
+  const checkUserChanges = async () => {
+    try {
+      const response = await fetch('/api/selected-users');
+      const data = await response.json();
+      
+      if (data.selectedUsers) {
         const currentIds = selectedUsers.map(u => u.id).sort().join(',');
         const newIds = data.selectedUsers.map(u => u.id).sort().join(',');
         
         if (currentIds !== newIds) {
-          console.log('Selected users changed:', data.selectedUsers);
+          console.log('User selection changed - fetching fresh data');
           setSelectedUsers(data.selectedUsers);
+          setNextUpdateIn(300); // Reset timer
         }
       }
     } catch (error) {
-      console.error('Error fetching selected users:', error);
+      console.error('Error checking user changes:', error);
     }
   };
 
-  const refreshSlots = () => {
-    fetchSelectedUsers();
-    updateTimeSlots();
+  const updateEventsOnly = async () => {
+    if (selectedUsers.length > 0) {
+      console.log('Updating events (5-minute poll)');
+      await updateTimeSlots();
+    }
+  };
+
+  const refreshSlots = async () => {
+    console.log('Manual refresh triggered');
+    await fetchUsersAndEvents();
+  };
+
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
   };
 
   const getSlotAvailability = (hour, events) => {
@@ -460,7 +502,15 @@ export default function Home() {
 
       <div className="container">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-          <h1>Available Time Slots</h1>
+          <div>
+            <h1>Available Time Slots</h1>
+            <div style={{ fontSize: '12px', color: '#888', marginTop: '5px' }}>
+              Next update in: {formatTime(nextUpdateIn)}
+            </div>
+            <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>
+              Please make sure to refresh to get the latest slots available
+            </div>
+          </div>
           <button 
             onClick={refreshSlots}
             style={{
