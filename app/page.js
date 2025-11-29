@@ -45,9 +45,13 @@ export default function Home() {
 
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      if (data.name && typeof data.checked === "boolean") {
-        console.log("User selection changed via SSE - fetching fresh data");
-        fetchUsersAndEvents();
+      if (data.type === 'userSelectionUpdate' && data.selectedUsers) {
+        console.log("User selection changed via SSE - updating users and fetching events");
+        console.log('Updated selected users:', data.selectedUsers);
+        setSelectedUsers(data.selectedUsers);
+        setNextUpdateIn(300); // Reset timer
+      } else if (data.type === 'connected') {
+        console.log('SSE connected');
       }
     };
 
