@@ -36,71 +36,35 @@ export default function Home() {
   ];
 
   useEffect(() => {
-    console.log('Setting up SSE connection');
-    // Setup SSE connection for real-time updates
-    const eventSource = new EventSource('/api/sse');
+    // Initial load of selected users
+    fetchSelectedUsers();
     
-    eventSource.onopen = () => {
-      console.log('SSE connection opened');
-    };
+    // Poll for updates every 2 seconds
+    const interval = setInterval(fetchSelectedUsers, 2000);
     
-    eventSource.onmessage = (event) => {
-      console.log('SSE message received:', event.data);
-      const data = JSON.parse(event.data);
-      if (data.name && typeof data.checked === 'boolean') {
-        console.log('Processing user selection update:', data);
-        handleUserSelectionUpdate(data.name, data.checked);
-      }
-    };
-    
-    eventSource.onerror = (error) => {
-      console.error('SSE error:', error);
-    };
-
-    return () => {
-      console.log('Closing SSE connection');
-      eventSource.close();
-    };
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     updateTimeSlots();
   }, [selectedUsers]);
 
-  const handleUserSelectionUpdate = async (name, checked) => {
-    console.log('handleUserSelectionUpdate called:', { name, checked });
-    
-    if (checked) {
-      console.log('Adding user:', name);
-      // Get user ID from database
-      const response = await fetch(`/api/users?name=${encodeURIComponent(name)}`);
+  const fetchSelectedUsers = async () => {
+    try {
+      const response = await fetch('/api/selected-users');
       const data = await response.json();
-      console.log('User data from API:', data);
       
-      if (data.user) {
-        setSelectedUsers(prev => {
-          const exists = prev.find(u => u.id === data.user.userId);
-          if (!exists) {
-            console.log('Adding new user to selection:', data.user);
-            return [...prev, { id: data.user.userId, name: data.user.name }];
-          }
-          console.log('User already exists in selection');
-          return prev;
-        });
-      } else {
-        console.log('User not found in database');
+      if (data.selectedUsers) {
+        console.log('Fetched selected users:', data.selectedUsers);
+        setSelectedUsers(data.selectedUsers);
       }
-    } else {
-      console.log('Removing user:', name);
-      setSelectedUsers(prev => {
-        const filtered = prev.filter(user => user.name !== name);
-        console.log('Updated selected users:', filtered);
-        return filtered;
-      });
+    } catch (error) {
+      console.error('Error fetching selected users:', error);
     }
   };
 
   const refreshSlots = () => {
+    fetchSelectedUsers();
     updateTimeSlots();
   };
 
