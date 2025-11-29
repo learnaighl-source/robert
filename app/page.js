@@ -196,69 +196,7 @@ export default function Home() {
     }
   };
 
-  const formatAvailableTime = (hour, freeMinutes, events) => {
-    if (freeMinutes === 60) {
-      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-      const period = hour < 12 ? "AM" : "PM";
-      return `Available at ${displayHour}:00 ${period}`;
-    } else if (freeMinutes > 0) {
-      // Find the first available minute in this hour
-      const busySlots = new Array(60).fill(false);
-
-      for (const event of events) {
-        const startTimePart = event.startTime
-          .split("T")[1]
-          .split("+")[0]
-          .split("-")[0];
-        const endTimePart = event.endTime
-          .split("T")[1]
-          .split("+")[0]
-          .split("-")[0];
-        const [startHour, startMin] = startTimePart.split(":").map(Number);
-        const [endHour, endMin] = endTimePart.split(":").map(Number);
-
-        const eventStartMinutes = startHour * 60 + startMin;
-        const eventEndMinutes = endHour * 60 + endMin;
-        const slotStartMinutes = hour * 60;
-        const slotEndMinutes = (hour + 1) * 60;
-
-        const overlapStart = Math.max(eventStartMinutes, slotStartMinutes);
-        const overlapEnd = Math.min(eventEndMinutes, slotEndMinutes);
-
-        if (overlapStart < overlapEnd) {
-          for (
-            let i = overlapStart - slotStartMinutes;
-            i < overlapEnd - slotStartMinutes;
-            i++
-          ) {
-            if (i >= 0 && i < 60) busySlots[i] = true;
-          }
-        }
-      }
-
-      // Find first available minute
-      let firstAvailable = -1;
-      for (let i = 0; i < 60; i++) {
-        if (!busySlots[i]) {
-          firstAvailable = i;
-          break;
-        }
-      }
-
-      if (firstAvailable >= 0) {
-        const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-        const period = hour < 12 ? "AM" : "PM";
-        return `Available at ${displayHour}:${firstAvailable
-          .toString()
-          .padStart(2, "0")} ${period}`;
-      }
-    }
-    return "";
-  };
-
   const renderSlotContent = (slot, hour) => {
-    // Business hours: 9:00 AM to 5:30 PM
-    // Outside business hours = Not Available
     if (hour < 9 || hour > 17) {
       return (
         <div className="slot-content vertical">
@@ -269,11 +207,8 @@ export default function Home() {
       );
     }
 
-    // Special case for 5 PM (17:00-17:59)
-    // Only 5:00-5:30 PM is business hours
     if (hour === 17) {
       const businessMinutes = Math.min(slot.freeMinutes, 30);
-
       if (businessMinutes === 0) {
         return (
           <div className="slot-content vertical">
@@ -289,7 +224,6 @@ export default function Home() {
       } else {
         const freePercentage = (businessMinutes / 30) * 50;
         const busyPercentage = 50 - freePercentage;
-
         return (
           <div className="slot-content vertical">
             {busyPercentage > 0 && (
@@ -314,44 +248,99 @@ export default function Home() {
       }
     }
 
-    // Regular business hours (9 AM - 4:59 PM)
-    if (slot.availability.freePercentage === 100) {
-      return (
-        <div className="slot-content vertical">
-          <div className="free-portion-vertical" style={{ height: "100%" }}>
-            <span className="time-text">
-              {formatAvailableTime(hour, slot.freeMinutes, slot.events)}
-            </span>
-          </div>
-        </div>
-      );
-    } else if (slot.availability.freePercentage === 0) {
-      return (
-        <div className="slot-content vertical">
-          <div
-            className="busy-portion-vertical"
-            style={{ height: "100%" }}
-          ></div>
-        </div>
-      );
-    } else {
-      return (
-        <div className="slot-content vertical">
-          <div
-            className="free-portion-vertical"
-            style={{ height: `${slot.availability.freePercentage}%` }}
-          >
-            <span className="time-text">
-              {formatAvailableTime(hour, slot.freeMinutes, slot.events)}
-            </span>
-          </div>
-          <div
-            className="busy-portion-vertical"
-            style={{ height: `${slot.availability.busyPercentage}%` }}
-          ></div>
-        </div>
-      );
+    // Create minute-by-minute availability map
+    const busySlots = new Array(60).fill(false);
+    for (const event of slot.events) {
+      const startTimePart = event.startTime
+        .split("T")[1]
+        .split("+")[0]
+        .split("-")[0];
+      const endTimePart = event.endTime
+        .split("T")[1]
+        .split("+")[0]
+        .split("-")[0];
+      const [startHour, startMin] = startTimePart.split(":").map(Number);
+      const [endHour, endMin] = endTimePart.split(":").map(Number);
+
+      const eventStartMinutes = startHour * 60 + startMin;
+      const eventEndMinutes = endHour * 60 + endMin;
+      const slotStartMinutes = hour * 60;
+      const slotEndMinutes = (hour + 1) * 60;
+
+      const overlapStart = Math.max(eventStartMinutes, slotStartMinutes);
+      const overlapEnd = Math.min(eventEndMinutes, slotEndMinutes);
+
+      if (overlapStart < overlapEnd) {
+        for (
+          let i = overlapStart - slotStartMinutes;
+          i < overlapEnd - slotStartMinutes;
+          i++
+        ) {
+          if (i >= 0 && i < 60) busySlots[i] = true;
+        }
+      }
     }
+
+    // Find continuous segments
+    const segments = [];
+    let currentType = busySlots[0] ? "busy" : "free";
+    let currentStart = 0;
+
+    for (let i = 1; i <= 60; i++) {
+      const isBusy = i < 60 ? busySlots[i] : null;
+      const shouldEnd =
+        i === 60 ||
+        (currentType === "busy" && !isBusy) ||
+        (currentType === "free" && isBusy);
+
+      if (shouldEnd) {
+        segments.push({
+          type: currentType,
+          start: currentStart,
+          end: i,
+          percentage: ((i - currentStart) / 60) * 100,
+        });
+
+        if (i < 60) {
+          currentType = isBusy ? "busy" : "free";
+          currentStart = i;
+        }
+      }
+    }
+
+    return (
+      <div className="slot-content vertical">
+        {segments.map((segment, index) => {
+          if (segment.type === "free") {
+            return (
+              <div
+                key={index}
+                className="free-portion-vertical"
+                style={{ height: `${segment.percentage}%` }}
+              >
+                <span className="time-text">
+                  {segment.percentage > 15
+                    ? `Available at ${
+                        hour === 0 ? 12 : hour > 12 ? hour - 12 : hour
+                      }:${segment.start.toString().padStart(2, "0")} ${
+                        hour < 12 ? "AM" : "PM"
+                      }`
+                    : ""}
+                </span>
+              </div>
+            );
+          } else {
+            return (
+              <div
+                key={index}
+                className="busy-portion-vertical"
+                style={{ height: `${segment.percentage}%` }}
+              ></div>
+            );
+          }
+        })}
+      </div>
+    );
   };
 
   return (
