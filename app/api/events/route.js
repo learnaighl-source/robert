@@ -7,19 +7,22 @@ export async function GET(request) {
       return Response.json({ error: "userId is required" }, { status: 400 });
     }
 
+    // Get current date in Australia/Sydney timezone
     const now = new Date();
+    const australiaTime = new Date(now.toLocaleString("en-US", {timeZone: "Australia/Sydney"}));
+    
     const startOfDay = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
+      australiaTime.getFullYear(),
+      australiaTime.getMonth(),
+      australiaTime.getDate(),
       0,
       0,
       0
     );
     const endOfDay = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
+      australiaTime.getFullYear(),
+      australiaTime.getMonth(),
+      australiaTime.getDate(),
       23,
       59,
       59
@@ -27,6 +30,10 @@ export async function GET(request) {
 
     const startTime = startOfDay.getTime();
     const endTime = endOfDay.getTime();
+    
+    console.log('Fetching events for Australia date:', australiaTime.toDateString());
+    console.log('Start time:', new Date(startTime).toISOString());
+    console.log('End time:', new Date(endTime).toISOString());
 
     const response = await fetch(
       `https://services.leadconnectorhq.com/calendars/events?locationId=HJMdGIrc4MORK1Ts5Wru&startTime=${startTime}&endTime=${endTime}&userId=${userId}`,
