@@ -201,12 +201,12 @@ export default function Home() {
     if (freeMinutes === 60) {
       const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
       const period = hour < 12 ? "AM" : "PM";
-      return `${displayHour}:00 ${period}`;
+      return `Available at ${displayHour}:00 ${period}`;
     } else if (freeMinutes > 0) {
       const startMinute = 60 - freeMinutes;
       const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
       const period = hour < 12 ? "AM" : "PM";
-      return `${displayHour}:${startMinute
+      return `Available at ${displayHour}:${startMinute
         .toString()
         .padStart(2, "0")} ${period}`;
     }
