@@ -234,13 +234,13 @@ export default function Home() {
       if (businessMinutes === 0) {
         return (
           <div className="slot-content vertical">
-            <div className="not-available-slot" style={{ height: "50%" }}>
-              <span className="not-available-text">Not Available</span>
-            </div>
             <div
               className="busy-portion-vertical"
               style={{ height: "50%" }}
             ></div>
+            <div className="not-available-slot" style={{ height: "50%" }}>
+              <span className="not-available-text">Not Available</span>
+            </div>
           </div>
         );
       } else {
@@ -249,9 +249,6 @@ export default function Home() {
 
         return (
           <div className="slot-content vertical">
-            <div className="not-available-slot" style={{ height: "50%" }}>
-              <span className="not-available-text">Not Available</span>
-            </div>
             {busyPercentage > 0 && (
               <div
                 className="busy-portion-vertical"
@@ -265,6 +262,9 @@ export default function Home() {
               <span className="time-text">
                 {formatAvailableTime(hour, businessMinutes)}
               </span>
+            </div>
+            <div className="not-available-slot" style={{ height: "50%" }}>
+              <span className="not-available-text">Not Available</span>
             </div>
           </div>
         );
