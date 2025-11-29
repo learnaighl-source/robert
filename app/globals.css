@@ -19,7 +19,8 @@
   }
 }
 
-body {
+/* Only apply to elements that don't have custom styling */
+body:not(.custom-styled) {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
