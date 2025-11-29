@@ -338,10 +338,6 @@ export default function Home() {
       return (
         <div className="slot-content vertical">
           <div
-            className="busy-portion-vertical"
-            style={{ height: `${slot.availability.busyPercentage}%` }}
-          ></div>
-          <div
             className="free-portion-vertical"
             style={{ height: `${slot.availability.freePercentage}%` }}
           >
@@ -349,6 +345,10 @@ export default function Home() {
               {formatAvailableTime(hour, slot.freeMinutes, slot.events)}
             </span>
           </div>
+          <div
+            className="busy-portion-vertical"
+            style={{ height: `${slot.availability.busyPercentage}%` }}
+          ></div>
         </div>
       );
     }
@@ -504,7 +504,7 @@ export default function Home() {
         }
         .slot-content.vertical {
           flex-direction: column !important;
-          justify-content: flex-end !important;
+          justify-content: flex-start !important;
         }
         .free-portion-vertical {
           background: linear-gradient(180deg, #10b981, #059669) !important;
