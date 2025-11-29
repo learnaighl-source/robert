@@ -17,36 +17,17 @@ export async function POST(request) {
 
     console.log("Database update result:", result);
 
-    // Get updated selected users list
-    const selectedUsers = await User.find({ checked: true }).select(
-      "userId name"
-    );
-    const usersList = selectedUsers.map((user) => ({
-      id: user.userId,
-      name: user.name,
-    }));
-
-    // Broadcast to SSE clients with updated users list
+    // Broadcast to SSE clients
     const clientCount = global.sseClients?.size || 0;
     console.log("Broadcasting to", clientCount, "SSE clients");
 
     global.sseClients?.forEach((client) => {
-      client.write(
-        `data: ${JSON.stringify({
-          type: "userSelectionUpdate",
-          selectedUsers: usersList,
-          changedUser: { name, checked },
-        })}\n\n`
-      );
+      client.write(`data: ${JSON.stringify({ name, checked })}\n\n`);
     });
 
     console.log("User selection update completed successfully");
     return Response.json(
-      {
-        success: true,
-        selectedUsers: usersList,
-        message: "User selection updated and events will be refreshed",
-      },
+      { success: true },
       {
         headers: {
           "Access-Control-Allow-Origin": "*",

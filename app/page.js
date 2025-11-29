@@ -40,8 +40,16 @@ export default function Home() {
     // Initial load
     fetchUsersAndEvents();
 
-    // Check for updates every 2 seconds (lightweight check)
-    const checkInterval = setInterval(checkForUpdates, 2000);
+    // Setup SSE for immediate user change notifications
+    const eventSource = new EventSource("/api/sse");
+
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.name && typeof data.checked === "boolean") {
+        console.log("User selection changed via SSE - fetching fresh data");
+        fetchUsersAndEvents();
+      }
+    };
 
     // Countdown timer every second
     const timerInterval = setInterval(() => {
@@ -57,7 +65,7 @@ export default function Home() {
     }, 1000);
 
     return () => {
-      clearInterval(checkInterval);
+      eventSource.close();
       clearInterval(timerInterval);
     };
   }, []);
@@ -82,26 +90,6 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Error fetching users:", error);
-    }
-  };
-
-  const checkForUpdates = async () => {
-    try {
-      const response = await fetch('/api/notify-frontend', { method: 'POST' });
-      const data = await response.json();
-      
-      if (data.selectedUsers) {
-        const currentIds = selectedUsers.map(u => u.id).sort().join(',');
-        const newIds = data.selectedUsers.map(u => u.id).sort().join(',');
-        
-        if (currentIds !== newIds) {
-          console.log('User selection changed - updating immediately');
-          setSelectedUsers(data.selectedUsers);
-          setNextUpdateIn(300); // Reset timer
-        }
-      }
-    } catch (error) {
-      console.error('Error checking for updates:', error);
     }
   };
 
