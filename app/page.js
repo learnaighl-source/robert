@@ -39,14 +39,20 @@ export default function Home() {
     // Initial load of selected users
     fetchSelectedUsers();
     
-    // Poll for updates every 2 seconds
-    const interval = setInterval(fetchSelectedUsers, 2000);
+    // Poll for updates every 3 seconds
+    const interval = setInterval(fetchSelectedUsers, 3000);
     
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
-    updateTimeSlots();
+    // Only update time slots when selectedUsers actually changes
+    if (selectedUsers.length > 0) {
+      updateTimeSlots();
+    } else {
+      setTimeSlots([]);
+      setLoadingSlots(false);
+    }
   }, [selectedUsers]);
 
   const fetchSelectedUsers = async () => {
@@ -55,8 +61,14 @@ export default function Home() {
       const data = await response.json();
       
       if (data.selectedUsers) {
-        console.log('Fetched selected users:', data.selectedUsers);
-        setSelectedUsers(data.selectedUsers);
+        // Only update if the selection actually changed
+        const currentIds = selectedUsers.map(u => u.id).sort().join(',');
+        const newIds = data.selectedUsers.map(u => u.id).sort().join(',');
+        
+        if (currentIds !== newIds) {
+          console.log('Selected users changed:', data.selectedUsers);
+          setSelectedUsers(data.selectedUsers);
+        }
       }
     } catch (error) {
       console.error('Error fetching selected users:', error);
