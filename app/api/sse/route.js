@@ -2,46 +2,33 @@ export async function GET() {
   const stream = new ReadableStream({
     start(controller) {
       const encoder = new TextEncoder();
-      let isConnected = true;
       
+      // Initialize SSE clients array if not exists
       if (!global.sseClients) {
         global.sseClients = new Set();
       }
 
       const client = {
         write: (data) => {
-          if (!isConnected) return false;
           try {
             controller.enqueue(encoder.encode(data));
-            return true;
           } catch (error) {
-            isConnected = false;
-            global.sseClients?.delete(client);
-            return false;
+            console.error('SSE write error:', error);
           }
-        },
-        close: () => {
-          isConnected = false;
-          try {
-            controller.close();
-          } catch (e) {}
-          global.sseClients?.delete(client);
         }
       };
 
       global.sseClients.add(client);
+
+      // Send initial connection message
       client.write('data: {"type":"connected"}\n\n');
 
-      const heartbeat = setInterval(() => {
-        if (!client.write('data: {"type":"heartbeat"}\n\n')) {
-          clearInterval(heartbeat);
-        }
-      }, 30000);
-
-      return () => {
-        clearInterval(heartbeat);
-        client.close();
+      // Cleanup on close
+      const cleanup = () => {
+        global.sseClients?.delete(client);
       };
+
+      return cleanup;
     }
   });
 
