@@ -96,8 +96,9 @@ export default function Home() {
         if (currentIds !== newIds) {
           console.log('User selection changed - fetching fresh data');
           setSelectedUsers(data.selectedUsers);
-          setNextUpdateIn(300); // Reset timer
+          setNextUpdateIn(300); // Only reset timer when users actually change
         }
+        // Don't reset timer if users haven't changed
       }
     } catch (error) {
       console.error('Error checking user changes:', error);
