@@ -1,41 +1,25 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '../../../lib/mongodb';
 import User from '../../../lib/models/User';
-import { broadcast } from '../websocket/route';
 
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     },
   });
 }
 
-export async function POST(request) {
+export async function GET() {
   try {
     await dbConnect();
     
-    const { userName, checked } = await request.json();
+    const users = await User.find({}, 'name checked');
     
-    const user = await User.findOneAndUpdate(
-      { name: userName },
-      { checked: checked },
-      { new: true }
-    );
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { 
-        status: 404,
-        headers: { 'Access-Control-Allow-Origin': '*' }
-      });
-    }
-
-    broadcast({ type: 'userUpdate', userName, checked });
-    
-    return NextResponse.json({ success: true }, {
+    return NextResponse.json({ users }, {
       headers: { 'Access-Control-Allow-Origin': '*' }
     });
 
