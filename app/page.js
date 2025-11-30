@@ -383,19 +383,31 @@ export default function Home() {
           padding: 0;
           box-sizing: border-box;
         }
-        body {
-          background: linear-gradient(
-            135deg,
-            #000000 0%,
-            #111111 100%
-          ) !important;
+        html, body {
+          background: transparent !important;
           font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif !important;
           color: #e2e8f0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow-x: hidden !important;
+        }
+        body::-webkit-scrollbar {
+          width: 4px !important;
+        }
+        body::-webkit-scrollbar-track {
+          background: transparent !important;
+        }
+        body::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2) !important;
+          border-radius: 2px !important;
+        }
+        body::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.3) !important;
         }
         .container {
           background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
           width: 100%;
-          min-height: 100vh;
+          min-height: fit-content;
           padding: 20px;
           border-radius: 16px;
           box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6),
