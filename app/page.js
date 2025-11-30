@@ -59,9 +59,18 @@ const page = () => {
   ];
 
   const getUserCalendar = (userName) => {
-    return calendars.find((cal) =>
+    console.log("Looking for calendar for user:", userName);
+    console.log(
+      "Available calendars:",
+      calendars.map((c) => c.name)
+    );
+
+    const calendar = calendars.find((cal) =>
       cal.name.toLowerCase().includes(userName.toLowerCase())
     );
+
+    console.log("Found calendar:", calendar?.name || "None");
+    return calendar;
   };
 
   const getTodayInfo = () => {
@@ -72,22 +81,35 @@ const page = () => {
     const dayOfWeek = brisbaneDate.getDay();
     const todayDate = brisbaneDate.toLocaleDateString("en-AU");
 
+    console.log("Today is day:", dayOfWeek, "Date:", todayDate);
     return { dayOfWeek, todayDate };
   };
 
   const getUserOpeningHours = (userName) => {
     const calendar = getUserCalendar(userName);
-    if (!calendar) return null;
+    if (!calendar) {
+      console.log("No calendar found for:", userName);
+      return "No calendar";
+    }
 
     const { dayOfWeek } = getTodayInfo();
+    console.log("Calendar openHours:", calendar.openHours);
 
     const daySchedule = calendar.openHours?.find((schedule) =>
       schedule.daysOfTheWeek.includes(dayOfWeek)
     );
 
-    if (!daySchedule) return null;
+    if (!daySchedule) {
+      console.log(
+        "No schedule for day",
+        dayOfWeek,
+        "in calendar:",
+        calendar.name
+      );
+      return "Closed today";
+    }
 
-    return daySchedule.hours
+    const hours = daySchedule.hours
       .map(
         (h) =>
           `${h.openHour}:${h.openMinute.toString().padStart(2, "0")}-${
@@ -95,6 +117,9 @@ const page = () => {
           }:${h.closeMinute.toString().padStart(2, "0")}`
       )
       .join(", ");
+
+    console.log("Opening hours for", userName, ":", hours);
+    return hours;
   };
 
   return (
@@ -179,7 +204,7 @@ const page = () => {
                     {todayDate}
                   </div>
                   <div style={{ fontSize: "9px", color: "#10b981" }}>
-                    {openingHours || "No schedule"}
+                    {openingHours}
                   </div>
                 </div>
               );
