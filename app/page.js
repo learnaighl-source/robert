@@ -80,16 +80,33 @@ const page = () => {
     const brisbaneDate = new Date(now);
     const dayOfWeek = brisbaneDate.getDay();
     const todayDate = brisbaneDate.toLocaleDateString("en-AU");
+    const dayNames = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+    const dayName = dayNames[dayOfWeek];
 
-    console.log("Today is day:", dayOfWeek, "Date:", todayDate);
-    return { dayOfWeek, todayDate };
+    console.log(
+      "Today is day:",
+      dayOfWeek,
+      "Date:",
+      todayDate,
+      "Day:",
+      dayName
+    );
+    return { dayOfWeek, todayDate, dayName };
   };
 
   const getUserOpeningHours = (userName) => {
     const calendar = getUserCalendar(userName);
     if (!calendar) {
       console.log("No calendar found for:", userName);
-      return "No calendar";
+      return { hours: "No calendar", schedule: null };
     }
 
     const { dayOfWeek } = getTodayInfo();
@@ -106,7 +123,7 @@ const page = () => {
         "in calendar:",
         calendar.name
       );
-      return "Closed today";
+      return { hours: "Closed today", schedule: null };
     }
 
     const hours = daySchedule.hours
@@ -119,7 +136,29 @@ const page = () => {
       .join(", ");
 
     console.log("Opening hours for", userName, ":", hours);
-    return hours;
+    return { hours, schedule: daySchedule };
+  };
+
+  const isHourAvailable = (userName, hour) => {
+    const calendar = getUserCalendar(userName);
+    if (!calendar) return false;
+
+    const { dayOfWeek } = getTodayInfo();
+    const daySchedule = calendar.openHours?.find((schedule) =>
+      schedule.daysOfTheWeek.includes(dayOfWeek)
+    );
+
+    if (!daySchedule) return false;
+
+    for (const timeSlot of daySchedule.hours) {
+      if (hour >= timeSlot.openHour && hour < timeSlot.closeHour) {
+        return true;
+      }
+      if (hour === timeSlot.closeHour && timeSlot.closeMinute > 0) {
+        return true;
+      }
+    }
+    return false;
   };
 
   return (
@@ -179,8 +218,8 @@ const page = () => {
               }}
             ></div>
             {checkedUsers.map((user) => {
-              const { todayDate } = getTodayInfo();
-              const openingHours = getUserOpeningHours(user.name);
+              const { todayDate, dayName } = getTodayInfo();
+              const { hours } = getUserOpeningHours(user.name);
 
               return (
                 <div
@@ -201,10 +240,10 @@ const page = () => {
                 >
                   <div style={{ fontSize: "14px" }}>{user.name}</div>
                   <div style={{ fontSize: "10px", color: "#94a3b8" }}>
-                    {todayDate}
+                    {todayDate} - {dayName}
                   </div>
                   <div style={{ fontSize: "9px", color: "#10b981" }}>
-                    {openingHours}
+                    {hours}
                   </div>
                 </div>
               );
@@ -236,24 +275,32 @@ const page = () => {
                       background: "#0a0a0a",
                     }}
                   >
-                    <div
-                      style={{
-                        background: "linear-gradient(180deg, #10b981, #059669)",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "11px",
-                        color: "#ffffff",
-                        fontWeight: "600",
-                        padding: "3px",
-                        textAlign: "center",
-                        height: "100%",
-                        minHeight: "50px",
-                      }}
-                    >
-                      <span>60min</span>
-                    </div>
+                    {(() => {
+                      const available = isHourAvailable(user.name, time.hour);
+
+                      return (
+                        <div
+                          style={{
+                            background: available
+                              ? "linear-gradient(180deg, #10b981, #059669)"
+                              : "linear-gradient(180deg, #374151, #1f2937)",
+                            cursor: available ? "pointer" : "default",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "11px",
+                            color: "#ffffff",
+                            fontWeight: "600",
+                            padding: "3px",
+                            textAlign: "center",
+                            height: "100%",
+                            minHeight: "50px",
+                          }}
+                        >
+                          <span>{available ? "Available" : "Closed"}</span>
+                        </div>
+                      );
+                    })()}
                   </div>
                 ))}
               </React.Fragment>
