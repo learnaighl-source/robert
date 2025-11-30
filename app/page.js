@@ -59,17 +59,9 @@ const page = () => {
   ];
 
   const getUserCalendar = (userName) => {
-    console.log("Looking for calendar for user:", userName);
-    console.log(
-      "Available calendars:",
-      calendars.map((c) => c.name)
-    );
-
     const calendar = calendars.find((cal) =>
       cal.name.toLowerCase().includes(userName.toLowerCase())
     );
-
-    console.log("Found calendar:", calendar?.name || "None");
     return calendar;
   };
 
@@ -91,38 +83,21 @@ const page = () => {
     ];
     const dayName = dayNames[dayOfWeek];
 
-    console.log(
-      "Today is day:",
-      dayOfWeek,
-      "Date:",
-      todayDate,
-      "Day:",
-      dayName
-    );
     return { dayOfWeek, todayDate, dayName };
   };
 
   const getUserOpeningHours = (userName) => {
     const calendar = getUserCalendar(userName);
     if (!calendar) {
-      console.log("No calendar found for:", userName);
       return { hours: "No calendar", schedule: null };
     }
 
     const { dayOfWeek } = getTodayInfo();
-    console.log("Calendar openHours:", calendar.openHours);
-
     const daySchedule = calendar.openHours?.find((schedule) =>
       schedule.daysOfTheWeek.includes(dayOfWeek)
     );
 
     if (!daySchedule) {
-      console.log(
-        "No schedule for day",
-        dayOfWeek,
-        "in calendar:",
-        calendar.name
-      );
       return { hours: "Closed today", schedule: null };
     }
 
@@ -135,7 +110,6 @@ const page = () => {
       )
       .join(", ");
 
-    console.log("Opening hours for", userName, ":", hours);
     return { hours, schedule: daySchedule };
   };
 
@@ -151,14 +125,13 @@ const page = () => {
     if (!daySchedule) return { availableMinutes: 0, totalMinutes: 60 };
 
     let availableMinutes = 0;
-    const hourStart = hour * 60; // Start of this hour in minutes
-    const hourEnd = (hour + 1) * 60; // End of this hour in minutes
+    const hourStart = hour * 60;
+    const hourEnd = (hour + 1) * 60;
 
     for (const timeSlot of daySchedule.hours) {
       const openTimeMinutes = timeSlot.openHour * 60 + timeSlot.openMinute;
       const closeTimeMinutes = timeSlot.closeHour * 60 + timeSlot.closeMinute;
 
-      // Find overlap between this hour and the opening hours
       const overlapStart = Math.max(hourStart, openTimeMinutes);
       const overlapEnd = Math.min(hourEnd, closeTimeMinutes);
 
@@ -171,189 +144,250 @@ const page = () => {
   };
 
   return (
-    <div
-      style={{
-        background: "linear-gradient(135deg, #000000 0%, #111111 100%)",
-        fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
-        color: "#e2e8f0",
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "100vh",
-        padding: "20px",
-        margin: 0,
-        overflow: "auto",
-      }}
-    >
-      <h1
+    <>
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #1a1a1a;
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, #555555, #333333);
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(180deg, #666666, #444444);
+        }
+      `}</style>
+
+      <div
         style={{
-          fontSize: "24px",
-          paddingBottom: "15px",
-          borderBottom: "2px solid #333333",
-          marginBottom: "25px",
-          color: "#ffffff",
-          fontWeight: "600",
-          textShadow: "0 2px 4px rgba(0, 0, 0, 0.5)",
+          background: "linear-gradient(135deg, #000000 0%, #111111 100%)",
+          fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
+          color: "#e2e8f0",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          padding: "20px",
+          margin: 0,
+          overflow: "hidden",
         }}
       >
-        Choose the slot that are available for you
-      </h1>
-
-      {checkedUsers.length > 0 ? (
-        <div
+        <h1
           style={{
-            maxHeight: "500px",
-            overflowY: "auto",
-            border: "1px solid #333333",
-            borderRadius: "12px",
-            background: "rgba(20, 20, 20, 0.8)",
+            fontSize: "24px",
+            paddingBottom: "15px",
+            borderBottom: "2px solid #333333",
+            marginBottom: "25px",
+            color: "#ffffff",
+            fontWeight: "600",
+            textShadow: "0 2px 4px rgba(0, 0, 0, 0.5)",
           }}
         >
+          Choose the slot that are available for you
+        </h1>
+
+        {checkedUsers.length > 0 ? (
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: `60px repeat(${checkedUsers.length}, 1fr)`,
-              gap: 0,
+              maxHeight: "500px",
+              overflowY: "auto",
+              border: "1px solid #333333",
+              borderRadius: "12px",
+              background: "rgba(20, 20, 20, 0.8)",
             }}
+            className="custom-scrollbar"
           >
             <div
               style={{
-                padding: "15px 10px",
-                borderBottom: "2px solid #333333",
-                fontWeight: "600",
-                background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)",
-                color: "#ffffff",
+                display: "grid",
+                gridTemplateColumns: `60px repeat(${checkedUsers.length}, 1fr)`,
+                gap: 0,
               }}
-            ></div>
-            {checkedUsers.map((user) => {
-              const { todayDate, dayName } = getTodayInfo();
-              const { hours } = getUserOpeningHours(user.name);
+            >
+              <div
+                style={{
+                  padding: "15px 10px",
+                  borderBottom: "2px solid #333333",
+                  fontWeight: "600",
+                  background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)",
+                  color: "#ffffff",
+                }}
+              ></div>
+              {checkedUsers.map((user) => {
+                const { todayDate, dayName } = getTodayInfo();
+                const { hours } = getUserOpeningHours(user.name);
 
-              return (
-                <div
-                  key={user._id}
-                  style={{
-                    padding: "10px",
-                    borderBottom: "2px solid #333333",
-                    borderLeft: "1px solid #333333",
-                    fontWeight: "600",
-                    textAlign: "center",
-                    background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)",
-                    color: "#ffffff",
-                    textShadow: "0 1px 2px rgba(0, 0, 0, 0.5)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "4px",
-                  }}
-                >
-                  <div style={{ fontSize: "14px" }}>{user.name}</div>
-                  <div style={{ fontSize: "10px", color: "#94a3b8" }}>
-                    {todayDate} - {dayName}
-                  </div>
-                  <div style={{ fontSize: "9px", color: "#10b981" }}>
-                    {hours}
-                  </div>
-                </div>
-              );
-            })}
-
-            {times.map((time) => (
-              <React.Fragment key={time.label}>
-                <div
-                  style={{
-                    padding: "12px 10px",
-                    fontWeight: "500",
-                    color: "#888888",
-                    fontSize: "13px",
-                    borderBottom: "1px solid #333333",
-                    borderRight: "1px solid #333333",
-                    background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)",
-                  }}
-                >
-                  {time.label}
-                </div>
-                {checkedUsers.map((user) => (
+                return (
                   <div
-                    key={`${time.label}-${user._id}`}
+                    key={user._id}
                     style={{
-                      padding: 0,
-                      borderBottom: "1px solid #333333",
+                      padding: "10px",
+                      borderBottom: "2px solid #333333",
                       borderLeft: "1px solid #333333",
-                      minHeight: "55px",
-                      background: "#0a0a0a",
+                      fontWeight: "600",
+                      textAlign: "center",
+                      background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)",
+                      color: "#ffffff",
+                      textShadow: "0 1px 2px rgba(0, 0, 0, 0.5)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "4px",
                     }}
                   >
-                    {(() => {
-                      const { availableMinutes, totalMinutes } =
-                        getHourAvailability(user.name, time.hour);
-                      const availablePercentage =
-                        (availableMinutes / totalMinutes) * 100;
-                      const unavailablePercentage = 100 - availablePercentage;
+                    <div style={{ fontSize: "14px" }}>{user.name}</div>
+                    <div style={{ fontSize: "10px", color: "#94a3b8" }}>
+                      {todayDate} - {dayName}
+                    </div>
+                    <div style={{ fontSize: "9px", color: "#10b981" }}>
+                      {hours}
+                    </div>
+                  </div>
+                );
+              })}
 
-                      if (availableMinutes === 0) {
-                        return (
-                          <div
-                            style={{
-                              background:
-                                "linear-gradient(180deg, #374151, #1f2937)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "11px",
-                              color: "#ffffff",
-                              fontWeight: "600",
-                              padding: "3px",
-                              textAlign: "center",
-                              height: "100%",
-                              minHeight: "50px",
-                            }}
-                          >
-                            <span>Closed</span>
-                          </div>
+              {times.map((time) => (
+                <React.Fragment key={time.label}>
+                  <div
+                    style={{
+                      padding: "12px 10px",
+                      fontWeight: "500",
+                      color: "#888888",
+                      fontSize: "13px",
+                      borderBottom: "1px solid #333333",
+                      borderRight: "1px solid #333333",
+                      background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)",
+                    }}
+                  >
+                    {time.label}
+                  </div>
+                  {checkedUsers.map((user) => (
+                    <div
+                      key={`${time.label}-${user._id}`}
+                      style={{
+                        padding: 0,
+                        borderBottom: "1px solid #333333",
+                        borderLeft: "1px solid #333333",
+                        minHeight: "55px",
+                        background: "#0a0a0a",
+                      }}
+                    >
+                      {(() => {
+                        const { availableMinutes } = getHourAvailability(
+                          user.name,
+                          time.hour
                         );
-                      }
-
-                      if (availableMinutes === 60) {
-                        return (
-                          <div
-                            style={{
-                              background:
-                                "linear-gradient(180deg, #10b981, #059669)",
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "11px",
-                              color: "#ffffff",
-                              fontWeight: "600",
-                              padding: "3px",
-                              textAlign: "center",
-                              height: "100%",
-                              minHeight: "50px",
-                            }}
-                          >
-                            <span>60min</span>
-                          </div>
+                        const calendar = getUserCalendar(user.name);
+                        const { dayOfWeek } = getTodayInfo();
+                        const daySchedule = calendar?.openHours?.find(
+                          (schedule) =>
+                            schedule.daysOfTheWeek.includes(dayOfWeek)
                         );
-                      }
 
-                      // Partial availability - show both available and unavailable portions
-                      return (
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            height: "100%",
-                            minHeight: "50px",
-                          }}
-                        >
-                          {unavailablePercentage > 0 && (
+                        if (availableMinutes === 0) {
+                          return (
                             <div
                               style={{
                                 background:
                                   "linear-gradient(180deg, #374151, #1f2937)",
-                                height: `${unavailablePercentage}%`,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "11px",
+                                color: "#ffffff",
+                                fontWeight: "600",
+                                height: "100%",
+                                minHeight: "50px",
+                              }}
+                            >
+                              <span>Closed</span>
+                            </div>
+                          );
+                        }
+
+                        if (availableMinutes === 60) {
+                          return (
+                            <div
+                              style={{
+                                background:
+                                  "linear-gradient(180deg, #10b981, #059669)",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "11px",
+                                color: "#ffffff",
+                                fontWeight: "600",
+                                height: "100%",
+                                minHeight: "50px",
+                              }}
+                            >
+                              <span>60min</span>
+                            </div>
+                          );
+                        }
+
+                        // Calculate exact positioning
+                        let availableStart = null;
+                        let availableEnd = null;
+
+                        if (daySchedule) {
+                          for (const timeSlot of daySchedule.hours) {
+                            const openTimeMinutes =
+                              timeSlot.openHour * 60 + timeSlot.openMinute;
+                            const closeTimeMinutes =
+                              timeSlot.closeHour * 60 + timeSlot.closeMinute;
+                            const hourStart = time.hour * 60;
+                            const hourEnd = (time.hour + 1) * 60;
+
+                            if (
+                              openTimeMinutes < hourEnd &&
+                              closeTimeMinutes > hourStart
+                            ) {
+                              availableStart =
+                                Math.max(hourStart, openTimeMinutes) -
+                                hourStart;
+                              availableEnd =
+                                Math.min(hourEnd, closeTimeMinutes) - hourStart;
+                              break;
+                            }
+                          }
+                        }
+
+                        const startPercentage = (availableStart / 60) * 100;
+                        const endPercentage = (availableEnd / 60) * 100;
+                        const availableHeight = endPercentage - startPercentage;
+                        const topGrayHeight = startPercentage;
+                        const bottomGrayHeight = 100 - endPercentage;
+
+                        return (
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              height: "100%",
+                              minHeight: "50px",
+                            }}
+                          >
+                            {topGrayHeight > 0 && (
+                              <div
+                                style={{
+                                  background:
+                                    "linear-gradient(180deg, #374151, #1f2937)",
+                                  height: `${topGrayHeight}%`,
+                                }}
+                              ></div>
+                            )}
+                            <div
+                              style={{
+                                background:
+                                  "linear-gradient(180deg, #10b981, #059669)",
+                                cursor: "pointer",
+                                height: `${availableHeight}%`,
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
@@ -361,47 +395,42 @@ const page = () => {
                                 color: "#ffffff",
                                 fontWeight: "600",
                               }}
-                            ></div>
-                          )}
-                          <div
-                            style={{
-                              background:
-                                "linear-gradient(180deg, #10b981, #059669)",
-                              cursor: "pointer",
-                              height: `${availablePercentage}%`,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "9px",
-                              color: "#ffffff",
-                              fontWeight: "600",
-                            }}
-                          >
-                            <span>{availableMinutes}min</span>
+                            >
+                              <span>{availableMinutes}min</span>
+                            </div>
+                            {bottomGrayHeight > 0 && (
+                              <div
+                                style={{
+                                  background:
+                                    "linear-gradient(180deg, #374151, #1f2937)",
+                                  height: `${bottomGrayHeight}%`,
+                                }}
+                              ></div>
+                            )}
                           </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                ))}
-              </React.Fragment>
-            ))}
+                        );
+                      })()}
+                    </div>
+                  ))}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
-        </div>
-      ) : (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "30px",
-            color: "#94a3b8",
-            fontSize: "16px",
-            fontWeight: "500",
-          }}
-        >
-          Loading users...
-        </div>
-      )}
-    </div>
+        ) : (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "30px",
+              color: "#94a3b8",
+              fontSize: "16px",
+              fontWeight: "500",
+            }}
+          >
+            Loading users...
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 
