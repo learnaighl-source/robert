@@ -25,13 +25,14 @@ const page = () => {
         background: "linear-gradient(135deg, #000000 0%, #111111 100%)",
         fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
         color: "#e2e8f0",
-        width: "100%",
-        minHeight: "100vh",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
         padding: "20px",
-        borderRadius: "16px",
-        boxShadow:
-          "0 20px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
-        border: "1px solid rgba(255, 255, 255, 0.1)",
+        margin: 0,
+        overflow: "auto",
       }}
     >
       <h1
