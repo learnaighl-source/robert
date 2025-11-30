@@ -5,25 +5,16 @@ const page = () => {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    fetch("/api/get-users")
-      .then((r) => r.json())
-      .then((data) => setUsers(data.users || []));
-
-    const eventSource = new EventSource("/api/websocket");
-    eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === "userUpdate") {
-        setUsers((prev) =>
-          prev.map((user) =>
-            user.name === data.userName
-              ? { ...user, checked: data.checked }
-              : user
-          )
-        );
-      }
+    const loadUsers = () => {
+      fetch("/api/get-users")
+        .then((r) => r.json())
+        .then((data) => setUsers(data.users || []));
     };
 
-    return () => eventSource.close();
+    loadUsers();
+    const interval = setInterval(loadUsers, 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const checkedUsers = users.filter((u) => u.checked);
