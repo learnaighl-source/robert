@@ -3,16 +3,28 @@ import React, { useState, useEffect } from "react";
 
 const page = () => {
   const [users, setUsers] = useState([]);
+  const [calendars, setCalendars] = useState([]);
 
   useEffect(() => {
-    const loadUsers = () => {
-      fetch("/api/get-users")
-        .then((r) => r.json())
-        .then((data) => setUsers(data.users || []));
+    const loadData = async () => {
+      try {
+        const [usersRes, calendarsRes] = await Promise.all([
+          fetch("/api/get-users"),
+          fetch("/api/get-calendars"),
+        ]);
+
+        const usersData = await usersRes.json();
+        const calendarsData = await calendarsRes.json();
+
+        setUsers(usersData.users || []);
+        setCalendars(calendarsData.calendars || []);
+      } catch (error) {
+        console.error("Error loading data:", error);
+      }
     };
 
-    loadUsers();
-    const interval = setInterval(loadUsers, 1000);
+    loadData();
+    const interval = setInterval(loadData, 1000);
 
     return () => clearInterval(interval);
   }, []);
@@ -20,31 +32,73 @@ const page = () => {
   const checkedUsers = users.filter((u) => u.checked);
 
   const times = [
-    "12 AM",
-    "1 AM",
-    "2 AM",
-    "3 AM",
-    "4 AM",
-    "5 AM",
-    "6 AM",
-    "7 AM",
-    "8 AM",
-    "9 AM",
-    "10 AM",
-    "11 AM",
-    "12 PM",
-    "1 PM",
-    "2 PM",
-    "3 PM",
-    "4 PM",
-    "5 PM",
-    "6 PM",
-    "7 PM",
-    "8 PM",
-    "9 PM",
-    "10 PM",
-    "11 PM",
+    { label: "12 AM", hour: 0 },
+    { label: "1 AM", hour: 1 },
+    { label: "2 AM", hour: 2 },
+    { label: "3 AM", hour: 3 },
+    { label: "4 AM", hour: 4 },
+    { label: "5 AM", hour: 5 },
+    { label: "6 AM", hour: 6 },
+    { label: "7 AM", hour: 7 },
+    { label: "8 AM", hour: 8 },
+    { label: "9 AM", hour: 9 },
+    { label: "10 AM", hour: 10 },
+    { label: "11 AM", hour: 11 },
+    { label: "12 PM", hour: 12 },
+    { label: "1 PM", hour: 13 },
+    { label: "2 PM", hour: 14 },
+    { label: "3 PM", hour: 15 },
+    { label: "4 PM", hour: 16 },
+    { label: "5 PM", hour: 17 },
+    { label: "6 PM", hour: 18 },
+    { label: "7 PM", hour: 19 },
+    { label: "8 PM", hour: 20 },
+    { label: "9 PM", hour: 21 },
+    { label: "10 PM", hour: 22 },
+    { label: "11 PM", hour: 23 },
   ];
+
+  const getUserCalendar = (userName) => {
+    return calendars.find(
+      (cal) =>
+        cal.calendarType === "service_booking" &&
+        cal.name.toLowerCase().includes(userName.toLowerCase())
+    );
+  };
+
+  const getAvailabilityForHour = (userName, hour) => {
+    const calendar = getUserCalendar(userName);
+    if (!calendar) return { available: false, minutes: 0 };
+
+    // Brisbane timezone
+    const now = new Date().toLocaleString("en-US", {
+      timeZone: "Australia/Brisbane",
+    });
+    const brisbaneDate = new Date(now);
+    const dayOfWeek = brisbaneDate.getDay();
+
+    const daySchedule = calendar.openHours?.find((schedule) =>
+      schedule.daysOfTheWeek.includes(dayOfWeek)
+    );
+
+    if (!daySchedule) return { available: false, minutes: 0 };
+
+    for (const timeSlot of daySchedule.hours) {
+      const openHour = timeSlot.openHour;
+      const closeHour = timeSlot.closeHour;
+      const closeMinute = timeSlot.closeMinute;
+
+      if (hour >= openHour && hour < closeHour) {
+        return { available: true, minutes: 60 };
+      }
+
+      if (hour === closeHour && closeMinute > 0) {
+        return { available: true, minutes: closeMinute };
+      }
+    }
+
+    return { available: false, minutes: 0 };
+  };
 
   return (
     <div
@@ -93,7 +147,6 @@ const page = () => {
               gap: 0,
             }}
           >
-            {/* Header */}
             <div
               style={{
                 padding: "15px 10px",
@@ -121,9 +174,8 @@ const page = () => {
               </div>
             ))}
 
-            {/* Time rows */}
             {times.map((time) => (
-              <React.Fragment key={time}>
+              <React.Fragment key={time.label}>
                 <div
                   style={{
                     padding: "12px 10px",
@@ -135,11 +187,11 @@ const page = () => {
                     background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)",
                   }}
                 >
-                  {time}
+                  {time.label}
                 </div>
                 {checkedUsers.map((user) => (
                   <div
-                    key={`${time}-${user._id}`}
+                    key={`${time.label}-${user._id}`}
                     style={{
                       padding: 0,
                       borderBottom: "1px solid #333333",
@@ -148,34 +200,57 @@ const page = () => {
                       background: "#0a0a0a",
                     }}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        height: "100%",
-                        minHeight: "50px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          background:
-                            "linear-gradient(180deg, #10b981, #059669)",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "11px",
-                          color: "#ffffff",
-                          fontWeight: "600",
-                          padding: "3px",
-                          textAlign: "center",
-                          minHeight: "22px",
-                          height: "100%",
-                        }}
-                      >
-                        <span>60min</span>
-                      </div>
-                    </div>
+                    {(() => {
+                      const availability = getAvailabilityForHour(
+                        user.name,
+                        time.hour
+                      );
+
+                      if (!availability.available) {
+                        return (
+                          <div
+                            style={{
+                              background:
+                                "linear-gradient(180deg, #374151, #1f2937)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "11px",
+                              color: "#ffffff",
+                              fontWeight: "600",
+                              padding: "3px",
+                              textAlign: "center",
+                              height: "100%",
+                              minHeight: "50px",
+                            }}
+                          >
+                            <span>Unavailable</span>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div
+                          style={{
+                            background:
+                              "linear-gradient(180deg, #10b981, #059669)",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "11px",
+                            color: "#ffffff",
+                            fontWeight: "600",
+                            padding: "3px",
+                            textAlign: "center",
+                            height: "100%",
+                            minHeight: "50px",
+                          }}
+                        >
+                          <span>Available {availability.minutes}min</span>
+                        </div>
+                      );
+                    })()}
                   </div>
                 ))}
               </React.Fragment>
