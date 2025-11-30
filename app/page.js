@@ -5,12 +5,10 @@ const page = () => {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    // Load initial users
     fetch("/api/get-users")
       .then((r) => r.json())
       .then((data) => setUsers(data.users || []));
 
-    // Real-time updates
     const eventSource = new EventSource("/api/websocket");
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -32,47 +30,53 @@ const page = () => {
   const uncheckedUsers = users.filter((u) => !u.checked);
 
   return (
-    <div className="h-screen bg-black text-white p-4 overflow-hidden">
-      <h1 className="text-4xl font-bold mb-6 text-center">
-        User Status Dashboard
-      </h1>
+    <div className="fixed inset-0 bg-black text-white overflow-hidden">
+      <div className="h-full flex flex-col">
+        <h1 className="text-8xl font-bold py-12 text-center">
+          User Status Dashboard
+        </h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-120px)]">
-        <div className="bg-green-900 p-6 rounded-xl overflow-hidden flex flex-col">
-          <h2 className="text-3xl font-bold mb-4 text-green-300">
-            Checked Users ({checkedUsers.length})
-          </h2>
-          <div className="space-y-3 overflow-y-auto flex-1">
-            {checkedUsers.map((user) => (
-              <div
-                key={user._id}
-                className="bg-green-800 p-4 rounded-lg text-green-100 text-xl font-semibold"
-              >
-                ✅ {user.name}
-              </div>
-            ))}
-            {checkedUsers.length === 0 && (
-              <div className="text-green-400 text-2xl">No users checked</div>
-            )}
+        <div className="flex-1 flex gap-12 px-12 pb-12">
+          <div className="flex-1 bg-green-900 rounded-3xl p-12 flex flex-col">
+            <h2 className="text-6xl font-bold mb-8 text-green-300">
+              Checked Users ({checkedUsers.length})
+            </h2>
+            <div className="flex-1 overflow-y-auto space-y-6">
+              {checkedUsers.map((user) => (
+                <div
+                  key={user._id}
+                  className="bg-green-800 p-8 rounded-3xl text-green-100 text-4xl font-bold"
+                >
+                  ✅ {user.name}
+                </div>
+              ))}
+              {checkedUsers.length === 0 && (
+                <div className="text-green-400 text-5xl text-center mt-32">
+                  No users checked
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className="bg-red-900 p-6 rounded-xl overflow-hidden flex flex-col">
-          <h2 className="text-3xl font-bold mb-4 text-red-300">
-            Unchecked Users ({uncheckedUsers.length})
-          </h2>
-          <div className="space-y-3 overflow-y-auto flex-1">
-            {uncheckedUsers.map((user) => (
-              <div
-                key={user._id}
-                className="bg-red-800 p-4 rounded-lg text-red-100 text-xl font-semibold"
-              >
-                ❌ {user.name}
-              </div>
-            ))}
-            {uncheckedUsers.length === 0 && (
-              <div className="text-red-400 text-2xl">All users checked</div>
-            )}
+          <div className="flex-1 bg-red-900 rounded-3xl p-12 flex flex-col">
+            <h2 className="text-6xl font-bold mb-8 text-red-300">
+              Unchecked Users ({uncheckedUsers.length})
+            </h2>
+            <div className="flex-1 overflow-y-auto space-y-6">
+              {uncheckedUsers.map((user) => (
+                <div
+                  key={user._id}
+                  className="bg-red-800 p-8 rounded-3xl text-red-100 text-4xl font-bold"
+                >
+                  ❌ {user.name}
+                </div>
+              ))}
+              {uncheckedUsers.length === 0 && (
+                <div className="text-red-400 text-5xl text-center mt-32">
+                  All users checked
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
