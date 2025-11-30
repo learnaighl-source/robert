@@ -1,70 +1,46 @@
-// GHL Calendar User Tracker
-// This script tracks checkbox changes and sends updates to your API
-
+// Your working GHL tracker script
 (function () {
-  let isTracking = false;
+  document.addEventListener("click", (e) => {
+    const button = e.target.closest("button");
+    if (!button) return;
 
-  function trackUserChanges() {
-    if (isTracking) return;
-    isTracking = true;
+    const checkbox = button.querySelector("span.h-4.w-4");
+    const nameSpan = button.querySelector("span[title]");
 
-    // Find all user checkboxes in GHL calendar
-    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    if (checkbox && nameSpan) {
+      e.preventDefault();
+      e.stopPropagation();
 
-    checkboxes.forEach((checkbox) => {
-      checkbox.addEventListener("change", async function (e) {
-        const userName = getUserNameFromCheckbox(e.target);
-        const isChecked = e.target.checked;
+      const isChecked = checkbox.querySelector("svg");
+      const name = nameSpan.getAttribute("title");
 
-        if (userName) {
-          console.log(
-            `User ${userName} ${isChecked ? "checked" : "unchecked"}`
-          );
+      if (isChecked) {
+        checkbox.innerHTML = "";
+        checkbox.style.border = "1.5px solid rgba(0, 0, 0, 0.5)";
+        checkbox.style.backgroundColor = "";
+        console.log(`Unchecked: ${name}`);
 
-          try {
-            await fetch("YOUR_NEXTJS_DOMAIN/api/user-selection", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                name: userName,
-                checked: isChecked,
-              }),
-            });
-          } catch (error) {
-            console.error("Failed to sync user selection:", error);
-          }
-        }
-      });
-    });
-  }
+        fetch("https://robert-ruby.vercel.app/api/user-selection", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name, checked: false }),
+        })
+          .then((r) => console.log("API response:", r.status))
+          .catch((e) => console.error("API error:", e));
+      } else {
+        checkbox.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true" style="color: rgb(0, 78, 235);"><path stroke-linecap="round" stroke-linejoin="round" d="M20 6L9 17l-5-5"></path></svg>`;
+        checkbox.style.border = "1.5px solid rgb(0, 78, 235)";
+        checkbox.style.backgroundColor = "rgba(0, 78, 235, 0.098)";
+        console.log(`Checked: ${name}`);
 
-  function getUserNameFromCheckbox(checkbox) {
-    // Adjust this selector based on GHL's HTML structure
-    const userElement =
-      checkbox.closest(".user-item") || checkbox.parentElement;
-    const nameElement =
-      userElement?.querySelector(".user-name") ||
-      userElement?.querySelector("label");
-    return nameElement?.textContent?.trim();
-  }
-
-  // Start tracking when DOM is ready
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", trackUserChanges);
-  } else {
-    trackUserChanges();
-  }
-
-  // Re-track if new elements are added dynamically
-  const observer = new MutationObserver(() => {
-    isTracking = false;
-    trackUserChanges();
-  });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
+        fetch("https://robert-ruby.vercel.app/api/user-selection", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name, checked: true }),
+        })
+          .then((r) => console.log("API response:", r.status))
+          .catch((e) => console.error("API error:", e));
+      }
+    }
   });
 })();

@@ -390,6 +390,8 @@ export default function Home() {
           margin: 0 !important;
           padding: 0 !important;
           overflow-x: hidden !important;
+          width: 100% !important;
+          max-width: 100% !important;
         }
         body::-webkit-scrollbar {
           width: 4px !important;
@@ -407,12 +409,15 @@ export default function Home() {
         .container {
           background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
           width: 100%;
+          max-width: 100%;
           min-height: fit-content;
           padding: 20px;
           border-radius: 16px;
           box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6),
             inset 0 1px 0 rgba(255, 255, 255, 0.05);
           border: 1px solid rgba(255, 255, 255, 0.1);
+          overflow-x: hidden;
+          box-sizing: border-box;
         }
         h1 {
           font-size: 24px;
@@ -493,6 +498,10 @@ export default function Home() {
         .time-grid {
           display: grid;
           gap: 0;
+          width: 100%;
+          max-width: 100%;
+          overflow-x: auto;
+          overflow-y: visible;
         }
         .time-header {
           padding: 15px 10px;

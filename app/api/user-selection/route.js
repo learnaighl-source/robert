@@ -10,14 +10,22 @@ export async function POST(request) {
 
     console.log("Received data:", { name, checked });
 
-    const result = await User.findOneAndUpdate(
+    // Try to find and update user, create if doesn't exist
+    let result = await User.findOneAndUpdate(
       { name },
       { checked },
       { new: true, upsert: false }
     );
 
     if (!result) {
-      return Response.json({ error: 'User not found' }, { status: 404 });
+      console.log(`User '${name}' not found, creating new user`);
+      // Create new user if not found
+      result = await User.create({
+        userId: `temp_${Date.now()}`, // Temporary ID until we get real one
+        name,
+        checked
+      });
+      console.log("Created new user:", result);
     }
 
     console.log("Database update result:", result);
