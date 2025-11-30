@@ -1,17 +1,26 @@
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
+import { getUserCache, getSelectedUsers, initializeCache } from '@/lib/userCache';
 
 export async function GET() {
   try {
-    await connectDB();
+    const cache = getUserCache();
     
-    const selectedUsers = await User.find({ checked: true }).select('userId name');
+    // If cache is empty, load from DB
+    if (cache.users.length === 0) {
+      await connectDB();
+      const dbUsers = await User.find({});
+      initializeCache(dbUsers);
+    }
+    
+    const selectedUsers = getSelectedUsers();
     
     return Response.json({ 
       selectedUsers: selectedUsers.map(user => ({
         id: user.userId,
         name: user.name
-      }))
+      })),
+      stats: cache.stats
     }, {
       headers: {
         'Access-Control-Allow-Origin': '*',

@@ -42,16 +42,16 @@ export default function Home() {
 
   useEffect(() => {
     // Initial load
-    fetchUsersAndEvents();
+    fetchCalendarState();
 
-    // Setup SSE for immediate user change notifications
+    // Setup SSE for refresh signals only
     const eventSource = new EventSource("/api/sse");
 
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      if (data.name && typeof data.checked === "boolean") {
-        console.log("User selection changed via SSE - fetching fresh data");
-        fetchUsersAndEvents();
+      if (data.type === "refresh") {
+        console.log("Refresh signal received - fetching fresh data");
+        fetchCalendarState();
       }
     };
 
@@ -59,9 +59,9 @@ export default function Home() {
     const timerInterval = setInterval(() => {
       setNextUpdateIn((prev) => {
         if (prev <= 1) {
-          // Time's up - fetch fresh users and events (5-minute polling)
-          console.log("5-minute timer: fetching fresh users and events");
-          fetchUsersAndEvents();
+          // Time's up - fetch fresh calendar state (5-minute polling)
+          console.log("5-minute timer: fetching fresh calendar state");
+          fetchCalendarState();
           return 300; // Reset to 5 minutes
         }
         return prev - 1;
@@ -83,29 +83,29 @@ export default function Home() {
     }
   }, [selectedUsers]);
 
-  const fetchUsersAndEvents = async () => {
+  const fetchCalendarState = async () => {
     try {
-      const [usersResponse, calendarsResponse] = await Promise.all([
-        fetch("/api/selected-users"),
+      const [stateResponse, calendarsResponse] = await Promise.all([
+        fetch("/api/calendar-state"),
         fetch("/api/calendars"),
       ]);
 
-      const usersData = await usersResponse.json();
+      const stateData = await stateResponse.json();
       const calendarsData = await calendarsResponse.json();
 
-      if (usersData.selectedUsers) {
-        setSelectedUsers(usersData.selectedUsers);
+      if (stateData.users) {
+        setSelectedUsers(stateData.users);
         setUserCalendars(calendarsData.calendars || []);
         setNextUpdateIn(300);
       }
     } catch (error) {
-      console.error("Error fetching users:", error);
+      console.error("Error fetching calendar state:", error);
     }
   };
 
   const refreshSlots = async () => {
     console.log("Manual refresh triggered");
-    await fetchUsersAndEvents();
+    await fetchCalendarState();
   };
 
   const handleSyncUsers = async () => {

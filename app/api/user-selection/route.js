@@ -1,5 +1,6 @@
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
+import { updateUserInCache, getUserStats } from "@/lib/userCache";
 
 export async function POST(request) {
   try {
@@ -9,25 +10,36 @@ export async function POST(request) {
 
     console.log("Received data:", { name, checked });
 
-    const result = await User.updateOne(
+    const result = await User.findOneAndUpdate(
       { name },
       { checked },
-      { upsert: false }
+      { new: true, upsert: false }
     );
+
+    if (!result) {
+      return Response.json({ error: 'User not found' }, { status: 404 });
+    }
 
     console.log("Database update result:", result);
 
-    // Broadcast to SSE clients
+    // Update cache
+    updateUserInCache(result.userId, {
+      userId: result.userId,
+      name: result.name,
+      checked: result.checked
+    });
+
+    // Send simple refresh signal to SSE clients
     const clientCount = global.sseClients?.size || 0;
-    console.log("Broadcasting to", clientCount, "SSE clients");
+    console.log("Broadcasting refresh to", clientCount, "SSE clients");
 
     global.sseClients?.forEach((client) => {
-      client.write(`data: ${JSON.stringify({ name, checked })}\n\n`);
+      client.write(`data: {"type":"refresh"}\n\n`);
     });
 
     console.log("User selection update completed successfully");
     return Response.json(
-      { success: true },
+      { success: true, user: result },
       {
         headers: {
           "Access-Control-Allow-Origin": "*",
