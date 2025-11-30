@@ -32,46 +32,46 @@ const page = () => {
   const uncheckedUsers = users.filter((u) => !u.checked);
 
   return (
-    <div className="min-h-screen bg-black text-white p-8">
-      <h1 className="text-4xl font-bold mb-8 text-center">
+    <div className="h-screen bg-black text-white p-4 overflow-hidden">
+      <h1 className="text-4xl font-bold mb-6 text-center">
         User Status Dashboard
       </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-green-900 p-6 rounded-lg">
-          <h2 className="text-2xl font-bold mb-4 text-green-300">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-120px)]">
+        <div className="bg-green-900 p-6 rounded-xl overflow-hidden flex flex-col">
+          <h2 className="text-3xl font-bold mb-4 text-green-300">
             Checked Users ({checkedUsers.length})
           </h2>
-          <div className="space-y-2">
+          <div className="space-y-3 overflow-y-auto flex-1">
             {checkedUsers.map((user) => (
               <div
                 key={user._id}
-                className="bg-green-800 p-3 rounded text-green-100"
+                className="bg-green-800 p-4 rounded-lg text-green-100 text-xl font-semibold"
               >
                 ✅ {user.name}
               </div>
             ))}
             {checkedUsers.length === 0 && (
-              <div className="text-green-400">No users checked</div>
+              <div className="text-green-400 text-2xl">No users checked</div>
             )}
           </div>
         </div>
 
-        <div className="bg-red-900 p-6 rounded-lg">
-          <h2 className="text-2xl font-bold mb-4 text-red-300">
+        <div className="bg-red-900 p-6 rounded-xl overflow-hidden flex flex-col">
+          <h2 className="text-3xl font-bold mb-4 text-red-300">
             Unchecked Users ({uncheckedUsers.length})
           </h2>
-          <div className="space-y-2">
+          <div className="space-y-3 overflow-y-auto flex-1">
             {uncheckedUsers.map((user) => (
               <div
                 key={user._id}
-                className="bg-red-800 p-3 rounded text-red-100"
+                className="bg-red-800 p-4 rounded-lg text-red-100 text-xl font-semibold"
               >
                 ❌ {user.name}
               </div>
             ))}
             {uncheckedUsers.length === 0 && (
-              <div className="text-red-400">All users checked</div>
+              <div className="text-red-400 text-2xl">All users checked</div>
             )}
           </div>
         </div>

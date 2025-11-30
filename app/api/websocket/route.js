@@ -1,17 +1,17 @@
-import { NextResponse } from 'next/server';
-
-const clients = new Set();
+let clients = [];
 
 export async function GET() {
+  const encoder = new TextEncoder();
+  
   const stream = new ReadableStream({
     start(controller) {
-      clients.add(controller);
+      clients.push(controller);
       
-      controller.enqueue(`data: ${JSON.stringify({ type: 'connected' })}\n\n`);
-      
-      return () => {
-        clients.delete(controller);
-      };
+      const message = `data: ${JSON.stringify({ type: 'connected' })}\n\n`;
+      controller.enqueue(encoder.encode(message));
+    },
+    cancel() {
+      clients = clients.filter(c => c !== this.controller);
     }
   });
 
@@ -26,12 +26,15 @@ export async function GET() {
 }
 
 export function broadcast(data) {
+  const encoder = new TextEncoder();
   const message = `data: ${JSON.stringify(data)}\n\n`;
-  clients.forEach(controller => {
+  
+  clients = clients.filter(controller => {
     try {
-      controller.enqueue(message);
+      controller.enqueue(encoder.encode(message));
+      return true;
     } catch (error) {
-      clients.delete(controller);
+      return false;
     }
   });
 }
