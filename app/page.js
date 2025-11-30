@@ -70,8 +70,8 @@ const page = () => {
     });
     const brisbaneDate = new Date(now);
     const dayOfWeek = brisbaneDate.getDay();
-    const todayDate = brisbaneDate.toLocaleDateString('en-AU');
-    
+    const todayDate = brisbaneDate.toLocaleDateString("en-AU");
+
     return { dayOfWeek, todayDate };
   };
 
@@ -80,16 +80,21 @@ const page = () => {
     if (!calendar) return null;
 
     const { dayOfWeek } = getTodayInfo();
-    
+
     const daySchedule = calendar.openHours?.find((schedule) =>
       schedule.daysOfTheWeek.includes(dayOfWeek)
     );
-    
+
     if (!daySchedule) return null;
-    
-    return daySchedule.hours.map(h => 
-      `${h.openHour}:${h.openMinute.toString().padStart(2, '0')}-${h.closeHour}:${h.closeMinute.toString().padStart(2, '0')}`
-    ).join(', ');
+
+    return daySchedule.hours
+      .map(
+        (h) =>
+          `${h.openHour}:${h.openMinute.toString().padStart(2, "0")}-${
+            h.closeHour
+          }:${h.closeMinute.toString().padStart(2, "0")}`
+      )
+      .join(", ");
   };
 
   return (
@@ -151,7 +156,7 @@ const page = () => {
             {checkedUsers.map((user) => {
               const { todayDate } = getTodayInfo();
               const openingHours = getUserOpeningHours(user.name);
-              
+
               return (
                 <div
                   key={user._id}
@@ -166,11 +171,13 @@ const page = () => {
                     textShadow: "0 1px 2px rgba(0, 0, 0, 0.5)",
                     display: "flex",
                     flexDirection: "column",
-                    gap: "4px"
+                    gap: "4px",
                   }}
                 >
                   <div style={{ fontSize: "14px" }}>{user.name}</div>
-                  <div style={{ fontSize: "10px", color: "#94a3b8" }}>{todayDate}</div>
+                  <div style={{ fontSize: "10px", color: "#94a3b8" }}>
+                    {todayDate}
+                  </div>
                   <div style={{ fontSize: "9px", color: "#10b981" }}>
                     {openingHours || "No schedule"}
                   </div>
