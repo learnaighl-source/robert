@@ -59,45 +59,37 @@ const page = () => {
   ];
 
   const getUserCalendar = (userName) => {
-    return calendars.find(
-      (cal) =>
-        cal.calendarType === "service_booking" &&
-        cal.name.toLowerCase().includes(userName.toLowerCase())
+    return calendars.find((cal) =>
+      cal.name.toLowerCase().includes(userName.toLowerCase())
     );
   };
 
-  const getAvailabilityForHour = (userName, hour) => {
-    const calendar = getUserCalendar(userName);
-    if (!calendar) return { available: false, minutes: 0 };
-
-    // Brisbane timezone
+  const getTodayInfo = () => {
     const now = new Date().toLocaleString("en-US", {
       timeZone: "Australia/Brisbane",
     });
     const brisbaneDate = new Date(now);
     const dayOfWeek = brisbaneDate.getDay();
+    const todayDate = brisbaneDate.toLocaleDateString('en-AU');
+    
+    return { dayOfWeek, todayDate };
+  };
 
+  const getUserOpeningHours = (userName) => {
+    const calendar = getUserCalendar(userName);
+    if (!calendar) return null;
+
+    const { dayOfWeek } = getTodayInfo();
+    
     const daySchedule = calendar.openHours?.find((schedule) =>
       schedule.daysOfTheWeek.includes(dayOfWeek)
     );
-
-    if (!daySchedule) return { available: false, minutes: 0 };
-
-    for (const timeSlot of daySchedule.hours) {
-      const openHour = timeSlot.openHour;
-      const closeHour = timeSlot.closeHour;
-      const closeMinute = timeSlot.closeMinute;
-
-      if (hour >= openHour && hour < closeHour) {
-        return { available: true, minutes: 60 };
-      }
-
-      if (hour === closeHour && closeMinute > 0) {
-        return { available: true, minutes: closeMinute };
-      }
-    }
-
-    return { available: false, minutes: 0 };
+    
+    if (!daySchedule) return null;
+    
+    return daySchedule.hours.map(h => 
+      `${h.openHour}:${h.openMinute.toString().padStart(2, '0')}-${h.closeHour}:${h.closeMinute.toString().padStart(2, '0')}`
+    ).join(', ');
   };
 
   return (
@@ -156,23 +148,35 @@ const page = () => {
                 color: "#ffffff",
               }}
             ></div>
-            {checkedUsers.map((user) => (
-              <div
-                key={user._id}
-                style={{
-                  padding: "15px",
-                  borderBottom: "2px solid #333333",
-                  borderLeft: "1px solid #333333",
-                  fontWeight: "600",
-                  textAlign: "center",
-                  background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)",
-                  color: "#ffffff",
-                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.5)",
-                }}
-              >
-                {user.name}
-              </div>
-            ))}
+            {checkedUsers.map((user) => {
+              const { todayDate } = getTodayInfo();
+              const openingHours = getUserOpeningHours(user.name);
+              
+              return (
+                <div
+                  key={user._id}
+                  style={{
+                    padding: "10px",
+                    borderBottom: "2px solid #333333",
+                    borderLeft: "1px solid #333333",
+                    fontWeight: "600",
+                    textAlign: "center",
+                    background: "linear-gradient(145deg, #1a1a1a, #0a0a0a)",
+                    color: "#ffffff",
+                    textShadow: "0 1px 2px rgba(0, 0, 0, 0.5)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "4px"
+                  }}
+                >
+                  <div style={{ fontSize: "14px" }}>{user.name}</div>
+                  <div style={{ fontSize: "10px", color: "#94a3b8" }}>{todayDate}</div>
+                  <div style={{ fontSize: "9px", color: "#10b981" }}>
+                    {openingHours || "No schedule"}
+                  </div>
+                </div>
+              );
+            })}
 
             {times.map((time) => (
               <React.Fragment key={time.label}>
@@ -200,57 +204,24 @@ const page = () => {
                       background: "#0a0a0a",
                     }}
                   >
-                    {(() => {
-                      const availability = getAvailabilityForHour(
-                        user.name,
-                        time.hour
-                      );
-
-                      if (!availability.available) {
-                        return (
-                          <div
-                            style={{
-                              background:
-                                "linear-gradient(180deg, #374151, #1f2937)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "11px",
-                              color: "#ffffff",
-                              fontWeight: "600",
-                              padding: "3px",
-                              textAlign: "center",
-                              height: "100%",
-                              minHeight: "50px",
-                            }}
-                          >
-                            <span>Unavailable</span>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <div
-                          style={{
-                            background:
-                              "linear-gradient(180deg, #10b981, #059669)",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "11px",
-                            color: "#ffffff",
-                            fontWeight: "600",
-                            padding: "3px",
-                            textAlign: "center",
-                            height: "100%",
-                            minHeight: "50px",
-                          }}
-                        >
-                          <span>Available {availability.minutes}min</span>
-                        </div>
-                      );
-                    })()}
+                    <div
+                      style={{
+                        background: "linear-gradient(180deg, #10b981, #059669)",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "11px",
+                        color: "#ffffff",
+                        fontWeight: "600",
+                        padding: "3px",
+                        textAlign: "center",
+                        height: "100%",
+                        minHeight: "50px",
+                      }}
+                    >
+                      <span>60min</span>
+                    </div>
                   </div>
                 ))}
               </React.Fragment>
