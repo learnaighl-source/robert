@@ -33,7 +33,14 @@ export async function POST(request) {
       });
     }
 
-    broadcast({ type: 'userUpdate', userName, checked });
+    // Broadcast user update with refresh signal
+    broadcast({ 
+      type: 'userUpdate', 
+      userName, 
+      checked, 
+      timestamp: Date.now(),
+      forceRefresh: true 
+    });
     
     return NextResponse.json({ success: true }, {
       headers: { 'Access-Control-Allow-Origin': '*' }

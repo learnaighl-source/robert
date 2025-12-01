@@ -1,43 +1,21 @@
 "use client";
-import React, { useState, useEffect } from "react";
 
-const page = () => {
-  const [users, setUsers] = useState([]);
-  const [calendars, setCalendars] = useState([]);
+import React, { useEffect } from "react";
+import { useRealtimeData } from "../hooks/useRealtimeData";
+import IframeManager from "../lib/iframeManager";
 
+export default function Home() {
+  const { data, loading, error, forceRefresh, checkedUsers, calendars } = useRealtimeData();
+
+  // Initialize iframe management
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [usersRes, calendarsRes] = await Promise.all([
-          fetch("/api/get-users"),
-          fetch("/api/get-calendars"),
-        ]);
-
-        const usersData = await usersRes.json();
-        const calendarsData = await calendarsRes.json();
-
-        setUsers(usersData.users || []);
-        setCalendars(calendarsData.calendars || []);
-      } catch (error) {
-        console.error("Error loading data:", error);
-      }
-    };
-
-    loadData();
-    const interval = setInterval(loadData, 1000);
-
-    return () => clearInterval(interval);
+    if (IframeManager.isInIframe()) {
+      IframeManager.disableCache();
+      IframeManager.preventHydrationMismatch();
+    }
   }, []);
 
-  const checkedUsers = users.filter((u) => u.checked);
-
   const times = [
-    { label: "12 AM", hour: 0 },
-    { label: "1 AM", hour: 1 },
-    { label: "2 AM", hour: 2 },
-    { label: "3 AM", hour: 3 },
-    { label: "4 AM", hour: 4 },
-    { label: "5 AM", hour: 5 },
     { label: "6 AM", hour: 6 },
     { label: "7 AM", hour: 7 },
     { label: "8 AM", hour: 8 },
@@ -143,6 +121,62 @@ const page = () => {
     return { availableMinutes, totalMinutes: 60 };
   };
 
+  if (loading) {
+    return (
+      <div style={{
+        background: "linear-gradient(135deg, #000000 0%, #111111 100%)",
+        color: "#e2e8f0",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
+      }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "18px", marginBottom: "10px" }}>Loading...</div>
+          <div style={{ fontSize: "14px", color: "#94a3b8" }}>Syncing with GHL...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{
+        background: "linear-gradient(135deg, #000000 0%, #111111 100%)",
+        color: "#e2e8f0",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
+      }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "18px", marginBottom: "10px", color: "#ef4444" }}>Error: {error}</div>
+          <button onClick={forceRefresh} style={{
+            background: "linear-gradient(145deg, #10b981, #059669)",
+            border: "1px solid #047857",
+            borderRadius: "8px",
+            color: "#ffffff",
+            padding: "10px 16px",
+            fontSize: "14px",
+            cursor: "pointer"
+          }}>
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <style jsx global>{`
@@ -199,36 +233,34 @@ const page = () => {
             Available Slots
           </h1>
           <button
-            onClick={() => {
-              fetch("/api/get-calendars")
-                .then((r) => r.json())
-                .then((data) => setCalendars(data.calendars || []))
-                .catch((error) => console.error("Error refreshing:", error));
-            }}
+            onClick={forceRefresh}
+            disabled={loading}
             style={{
-              background: "linear-gradient(145deg, #10b981, #059669)",
+              background: loading ? "#666666" : "linear-gradient(145deg, #10b981, #059669)",
               border: "1px solid #047857",
               borderRadius: "8px",
               color: "#ffffff",
               padding: "10px 16px",
               fontSize: "14px",
               fontWeight: "600",
-              cursor: "pointer",
+              cursor: loading ? "not-allowed" : "pointer",
               boxShadow: "0 4px 8px rgba(0, 0, 0, 0.4)",
               transition: "all 0.3s ease",
             }}
             onMouseOver={(e) => {
-              e.target.style.background =
-                "linear-gradient(145deg, #059669, #047857)";
-              e.target.style.transform = "translateY(-2px)";
+              if (!loading) {
+                e.target.style.background = "linear-gradient(145deg, #059669, #047857)";
+                e.target.style.transform = "translateY(-2px)";
+              }
             }}
             onMouseOut={(e) => {
-              e.target.style.background =
-                "linear-gradient(145deg, #10b981, #059669)";
-              e.target.style.transform = "translateY(0)";
+              if (!loading) {
+                e.target.style.background = "linear-gradient(145deg, #10b981, #059669)";
+                e.target.style.transform = "translateY(0)";
+              }
             }}
           >
-            🔄 Refresh
+            {loading ? "🔄 Syncing..." : "🔄 Refresh"}
           </button>
         </div>
 
@@ -306,153 +338,34 @@ const page = () => {
                   >
                     {time.label}
                   </div>
-                  {checkedUsers.map((user) => (
-                    <div
-                      key={`${time.label}-${user._id}`}
-                      style={{
-                        padding: 0,
-                        borderBottom: "1px solid #333333",
-                        borderLeft: "1px solid #333333",
-                        minHeight: "55px",
-                        background: "#0a0a0a",
-                      }}
-                    >
-                      {(() => {
-                        const { availableMinutes } = getHourAvailability(
-                          user.name,
-                          time.hour
-                        );
-                        const calendar = getUserCalendar(user.name);
-                        const { dayOfWeek } = getTodayInfo();
-                        const daySchedule = calendar?.openHours?.find(
-                          (schedule) =>
-                            schedule.daysOfTheWeek.includes(dayOfWeek)
-                        );
+                  {checkedUsers.map((user) => {
+                    const { availableMinutes } = getHourAvailability(user.name, time.hour);
+                    const isAvailable = availableMinutes > 0;
+                    const availabilityPercentage = (availableMinutes / 60) * 100;
 
-                        if (availableMinutes === 0) {
-                          return (
-                            <div
-                              style={{
-                                background:
-                                  "linear-gradient(180deg, #374151, #1f2937)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: "11px",
-                                color: "#ffffff",
-                                fontWeight: "600",
-                                height: "100%",
-                                minHeight: "50px",
-                              }}
-                            >
-                              <span>Closed</span>
-                            </div>
-                          );
-                        }
-
-                        if (availableMinutes === 60) {
-                          return (
-                            <div
-                              style={{
-                                background:
-                                  "linear-gradient(180deg, #10b981, #059669)",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: "11px",
-                                color: "#ffffff",
-                                fontWeight: "600",
-                                height: "100%",
-                                minHeight: "50px",
-                              }}
-                            >
-                              <span>60min</span>
-                            </div>
-                          );
-                        }
-
-                        // Calculate exact positioning
-                        let availableStart = null;
-                        let availableEnd = null;
-
-                        if (daySchedule) {
-                          for (const timeSlot of daySchedule.hours) {
-                            const openTimeMinutes =
-                              timeSlot.openHour * 60 + timeSlot.openMinute;
-                            const closeTimeMinutes =
-                              timeSlot.closeHour * 60 + timeSlot.closeMinute;
-                            const hourStart = time.hour * 60;
-                            const hourEnd = (time.hour + 1) * 60;
-
-                            if (
-                              openTimeMinutes < hourEnd &&
-                              closeTimeMinutes > hourStart
-                            ) {
-                              availableStart =
-                                Math.max(hourStart, openTimeMinutes) -
-                                hourStart;
-                              availableEnd =
-                                Math.min(hourEnd, closeTimeMinutes) - hourStart;
-                              break;
-                            }
-                          }
-                        }
-
-                        const startPercentage = (availableStart / 60) * 100;
-                        const endPercentage = (availableEnd / 60) * 100;
-                        const availableHeight = endPercentage - startPercentage;
-                        const topGrayHeight = startPercentage;
-                        const bottomGrayHeight = 100 - endPercentage;
-
-                        return (
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              height: "100%",
-                              minHeight: "50px",
-                            }}
-                          >
-                            {topGrayHeight > 0 && (
-                              <div
-                                style={{
-                                  background:
-                                    "linear-gradient(180deg, #374151, #1f2937)",
-                                  height: `${topGrayHeight}%`,
-                                }}
-                              ></div>
-                            )}
-                            <div
-                              style={{
-                                background:
-                                  "linear-gradient(180deg, #10b981, #059669)",
-                                cursor: "pointer",
-                                height: `${availableHeight}%`,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: "9px",
-                                color: "#ffffff",
-                                fontWeight: "600",
-                              }}
-                            >
-                              <span>{availableMinutes}min</span>
-                            </div>
-                            {bottomGrayHeight > 0 && (
-                              <div
-                                style={{
-                                  background:
-                                    "linear-gradient(180deg, #374151, #1f2937)",
-                                  height: `${bottomGrayHeight}%`,
-                                }}
-                              ></div>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  ))}
+                    return (
+                      <div
+                        key={`${time.label}-${user._id}`}
+                        style={{
+                          padding: "8px",
+                          borderBottom: "1px solid #333333",
+                          borderLeft: "1px solid #333333",
+                          minHeight: "55px",
+                          background: isAvailable
+                            ? `linear-gradient(90deg, #10b981 0%, #10b981 ${availabilityPercentage}%, #0a0a0a ${availabilityPercentage}%, #0a0a0a 100%)`
+                            : "#0a0a0a",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "12px",
+                          color: isAvailable ? "#ffffff" : "#666666",
+                          fontWeight: "500",
+                        }}
+                      >
+                        {isAvailable ? `${availableMinutes}min` : "Closed"}
+                      </div>
+                    );
+                  })}
                 </React.Fragment>
               ))}
             </div>
@@ -461,18 +374,15 @@ const page = () => {
           <div
             style={{
               textAlign: "center",
-              padding: "30px",
+              padding: "60px 20px",
               color: "#94a3b8",
               fontSize: "16px",
-              fontWeight: "500",
             }}
           >
-            Loading users...
+            No users selected. Check users in GHL to see their availability.
           </div>
         )}
       </div>
     </>
   );
-};
-
-export default page;
+}
