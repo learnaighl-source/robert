@@ -188,7 +188,7 @@ const page = () => {
             textShadow: "0 2px 4px rgba(0, 0, 0, 0.5)",
           }}
         >
-          Choose the slot that are available for you
+          Available Slots
         </h1>
 
         {checkedUsers.length > 0 ? (
