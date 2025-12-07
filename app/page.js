@@ -989,7 +989,14 @@ export default function Home() {
                               }
 
                               const topPosition = (block.start / 60) * 100;
-                              return { label, topPosition, type: block.type };
+                              const blockHeight =
+                                ((block.end - block.start) / 60) * 100;
+                              return {
+                                label,
+                                topPosition,
+                                blockHeight,
+                                type: block.type,
+                              };
                             });
 
                             return (
@@ -1024,13 +1031,16 @@ export default function Home() {
                                       top: `${blockLabel.topPosition}%`,
                                       left: "2px",
                                       right: "2px",
-                                      fontSize: "7px",
+                                      height: `${blockLabel.blockHeight}%`,
+                                      fontSize: "12px",
                                       color: "#ffffff",
-                                      fontWeight: "500",
+                                      fontWeight: "600",
                                       textShadow: "0 1px 2px rgba(0,0,0,0.8)",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
                                       textAlign: "center",
                                       lineHeight: "1.2",
-                                      paddingTop: "2px",
                                     }}
                                   >
                                     {blockLabel.label}
@@ -1055,11 +1065,11 @@ export default function Home() {
                               background:
                                 "linear-gradient(180deg, #0a0a0a 0%, #0a0a0a 100%)",
                               display: "flex",
-                              alignItems: "flex-start",
+                              alignItems: "center",
                               justifyContent: "center",
-                              fontSize: "8px",
+                              fontSize: "12px",
                               color: "#666666",
-                              fontWeight: "500",
+                              fontWeight: "600",
                             }}
                           >
                             <div
