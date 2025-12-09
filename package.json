@@ -4,18 +4,22 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --turbopack",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint"
   },
   "dependencies": {
-    "next": "14.0.4",
-    "react": "^18",
-    "react-dom": "^18",
-    "mongodb": "^6.3.0"
+    "mongodb": "^7.0.0",
+    "mongoose": "^9.0.0",
+    "next": "16.0.7",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
   },
   "devDependencies": {
-    "eslint": "^8",
-    "eslint-config-next": "14.0.4"
+    "@tailwindcss/postcss": "^4",
+    "baseline-browser-mapping": "^2.8.32",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.5",
+    "tailwindcss": "^4"
   }
 }
